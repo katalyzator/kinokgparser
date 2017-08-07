@@ -7,8 +7,6 @@ from django.shortcuts import render
 import requests
 
 BASE_URL = 'http://kino.kg/'
-ALA_TOO_URL_TODAY = 'http://kino.kg/cinema.asp?cinemaid=105&type=1&day=0#top'
-ALA_TOO_URL_TOMORROW = 'http://kino.kg/cinema.asp?cinemaid=105&type=1&day=1#top'
 
 
 def get_html(url):
