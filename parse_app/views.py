@@ -88,11 +88,80 @@ def get_time_of_film(cinema_name, film_name, day):
 
     for j in trow:
         list_json.append(j.find('td').text[10:16])
-        print j.find('td').text[10:16]
-
-    print list_json
 
     return list_json
+
+
+def get_film_detail(film_name, cinema_name, day):
+    main_soup = BeautifulSoup(get_html(BASE_URL), 'html.parser')
+
+    link = ''
+    # item for name
+    main_div = main_soup.find('div', class_='menu_items')
+    sub_div = main_div.find_all('div', class_='menu_item')
+    for name in sub_div:
+        if name.a.text == cinema_name:
+            link = name.find('a', href=True)['href']
+
+    html = ''
+
+    if day == 'Today':
+        html = get_html('http://kino.kg' + link + '&type=1&day=0#top')
+
+    if day == 'Tomorrow':
+        html = get_html('http://kino.kg' + link + '&type=1&day=1#top')
+
+    if day == 'AfterTomorrow':
+        html = get_html('http://kino.kg' + link + '&type=1&day=2#top')
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    table = soup.find('div', class_='detail_content')
+
+    td = table.find_all('td')
+    film_link = ''
+    for i in td:
+        if i.a != None:
+            if i.a.text == film_name:
+                film_link = i.find('a', href=True)['href']
+
+    film_soup = BeautifulSoup(get_html('http://kino.kg' + film_link), 'html.parser')
+    detail_div = film_soup.find('div', class_='movie_detail')
+    all_div = detail_div.find_all('div')
+    description = detail_div.find_all('div')[7:8]
+
+    production = ''
+    director = ''
+    actors = ''
+    duration = ''
+    genre = ''
+    for i in all_div:
+        if i.find('strong') != None:
+
+            if i.find('strong').text == "Производство:":
+                production = i.find('strong').find_parent('div').text
+
+            if i.find('strong').text == "Режиссер:":
+                director = i.find('strong').find_parent('div').text
+
+            if i.find('strong').text == "Актеры:":
+                actors = i.find('strong').find_parent('div').text
+
+            if i.find('strong').text == "Продолжительность:":
+                duration = i.find('strong').find_parent('div').text
+
+            if i.find('strong').text == "Жанр:":
+                genre = i.find('strong').find_parent('div').text
+
+    movie_detail = {
+        "production": production,
+        "director": director,
+        "actors": actors,
+        "duration": duration,
+        "genre": genre
+    }
+
+    return movie_detail
 
 
 def parse(html):
@@ -108,7 +177,8 @@ def parse(html):
                 "name": today,
                 "times": [{
                     "time": time
-                } for time in get_time_of_film(i.a.text, today, "Today")]
+                } for time in get_time_of_film(i.a.text, today, "Today")],
+                "movie_detail": [get_film_detail(today, i.a.text, "Today")],
             } for today in get_today_film(i.a.text, 'Today')],
             # "tomorrow": [{
             #     "name": tomorrow
