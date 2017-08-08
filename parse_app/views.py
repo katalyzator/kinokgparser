@@ -128,13 +128,13 @@ def get_film_detail(film_name, cinema_name, day):
     film_soup = BeautifulSoup(get_html('http://kino.kg' + film_link), 'html.parser')
     detail_div = film_soup.find('div', class_='movie_detail')
     all_div = detail_div.find_all('div')
-    description = detail_div.find_all('div')[7:8]
 
     production = ''
     director = ''
     actors = ''
     duration = ''
     genre = ''
+    description = detail_div.find('br').next_sibling.text
     for i in all_div:
         if i.find('strong') != None:
 
@@ -153,12 +153,14 @@ def get_film_detail(film_name, cinema_name, day):
             if i.find('strong').text == "Жанр:":
                 genre = i.find('strong').find_parent('div').text
 
+
     movie_detail = {
         "production": production,
         "director": director,
         "actors": actors,
         "duration": duration,
-        "genre": genre
+        "genre": genre,
+        "description": description,
     }
 
     return movie_detail
