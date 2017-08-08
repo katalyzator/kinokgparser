@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import json
+
+import os
 from bs4 import BeautifulSoup
 from django.http import JsonResponse
 from django.shortcuts import render
 import requests
+
+from kinokgparser.settings import MEDIA_ROOT
 
 BASE_URL = 'http://kino.kg/'
 
@@ -134,7 +139,13 @@ def get_film_detail(film_name, cinema_name, day):
     actors = ''
     duration = ''
     genre = ''
-    description = detail_div.find('br').next_sibling.text
+
+    if film_soup.find('div', class_='movie_big_poster') != None:
+        img_src = film_soup.find('div', class_='movie_big_poster').img['src']
+
+    else:
+        img_src = "Not Found"
+
     for i in all_div:
         if i.find('strong') != None:
 
@@ -153,14 +164,14 @@ def get_film_detail(film_name, cinema_name, day):
             if i.find('strong').text == "Жанр:":
                 genre = i.find('strong').find_parent('div').text
 
-
     movie_detail = {
         "production": production,
         "director": director,
         "actors": actors,
         "duration": duration,
         "genre": genre,
-        "description": description,
+        # "description": description,
+        'image': 'http://kino.kg' + img_src,
     }
 
     return movie_detail
@@ -172,31 +183,48 @@ def parse(html):
     main_div_soup = soup.find('div', class_='menu_items')
     sub_div = main_div_soup.find_all('div', class_='menu_item')
 
-    cinema_name_json = [{
-        'cinema_name': i.a.text,
-        'films': [{
-            "today": [{
-                "name": today,
-                "times": [{
-                    "time": time
-                } for time in get_time_of_film(i.a.text, today, "Today")],
-                "movie_detail": [get_film_detail(today, i.a.text, "Today")],
-            } for today in get_today_film(i.a.text, 'Today')],
-            # "tomorrow": [{
-            #     "name": tomorrow
-            # } for tomorrow in get_today_film(i.a.text, 'Tomorrow')],
-            # "aftertomorrow": [{
-            #     "name": aftertomorrow
-            # } for aftertomorrow in get_today_film(i.a.text, 'AfterTomorrow')],
-        }]
+    cinema_name_json = [
+        {
+            'cinema_name': i.a.text,
+            'films': [{
+                "today": [{
+                    "name": today,
+                    "times": [{
+                        "time": time
+                    } for time in get_time_of_film(i.a.text, today, "Today")],
+                    "movie_detail": [get_film_detail(today, i.a.text, "Today")],
+                } for today in get_today_film(i.a.text, 'Today')],
+                "tomorrow": [{
+                    "name": tomorrow,
+                    "times": [{
+                        "time": time
+                    } for time in get_time_of_film(i.a.text, today, "Tomorrow")],
+                    "movie_detail": [get_film_detail(today, i.a.text, "Tomorrow")],
+                } for tomorrow in get_today_film(i.a.text, 'Today')],
+                "aftertomorrow": [{
+                    "name": aftertomorrow,
+                    "times": [{
+                        "time": time
+                    } for time in get_time_of_film(i.a.text, today, "AfterTomorrow")],
+                    "movie_detail": [get_film_detail(today, i.a.text, "AfterTomorrow")],
+                } for aftertomorrow in get_today_film(i.a.text, 'Today')],
+            }]
 
-    } for i in sub_div]
+        } for i in sub_div]
 
     return cinema_name_json
 
 
-def main(request):
+def get_json(request):
     objects = parse(get_html(BASE_URL))
-    print objects
+    with open('static/api/Output.json', 'w') as outfile:
+        json.dump(objects, outfile)
+
+    return JsonResponse(dict(result=True))
+
+
+def main(request):
+    f = open('Output.json')
+    objects = f.read()
 
     return JsonResponse(dict(data=objects))

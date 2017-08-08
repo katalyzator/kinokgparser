@@ -119,5 +119,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+MEDIA_URL = '/api/'
+MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "kinokgparser", "static", "api")
+
+STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "kinokgparser", "static", "static_root")
+
+STATICFILES_DIRS = (
+    os.path.join(os.path.dirname(BASE_DIR), "kinokgparser", "templates", "assets", "static_files"),
+)
 
 TEMPLATE_DIRS = (os.path.join(BASE_DIR,  'templates'),)
